@@ -1,0 +1,12 @@
+[package]
+name = "ray_tracer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+fastrand = "2"
+rayon = "1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
