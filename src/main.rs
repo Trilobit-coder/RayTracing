@@ -31,8 +31,10 @@ fn run() -> Result<()> {
                 if choose_mat < 0.8 {
                     // diffuse
                     let albedo = Color::random() * Color::random();
+                    let center_to = center + Vec3::new(0., random_f32_range(0., 0.5), 0.);
                     sphere_material = Arc::new(Lambertian::new(albedo));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    let moving_sphere = Sphere::new(center, 0.2, sphere_material).motion(center_to);
+                    world.add(Box::new(moving_sphere));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.);
@@ -69,7 +71,7 @@ fn run() -> Result<()> {
             Vec3::new(0., 1., 0.),
         )
         .focus(0.6, 10.)
-        .quality(500, 50);
+        .quality(100, 50);
 
     let camera = Camera::new(camera_config);
 

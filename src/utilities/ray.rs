@@ -5,6 +5,7 @@ use crate::utilities::{Point3, Vec3};
 pub struct Ray {
     orig: Point3,
     dir: Vec3,
+    time: f32,
 }
 
 impl Ray {
@@ -13,7 +14,15 @@ impl Ray {
         Ray {
             orig: origin,
             dir: direction,
+            time: 0.0,
         }
+    }
+
+    /// Set the time information of a ray
+    pub const fn set_time(mut self, time: f32) -> Self {
+        self.time = time;
+
+        self
     }
 
     /// Returns the point on the ray at parameter `t`: `P = origin + t * direction`.
@@ -28,6 +37,10 @@ impl Ray {
     /// The ray direction.
     pub const fn direction(&self) -> Vec3 {
         self.dir
+    }
+    /// The ray time.
+    pub const fn time(&self) -> f32 {
+        self.time
     }
 }
 

@@ -8,25 +8,33 @@ use crate::utilities::{Point3, Vec3};
 /// A sphere, defined by its center, radius, and material.
 #[derive(Clone)]
 pub struct Sphere {
-    center: Point3,
+    center: Ray,
     radius: f32,
     mat: Arc<dyn Material>,
 }
 
 impl Sphere {
-    /// Creates a sphere; negative radii are clamped to zero.
-    pub const fn new(center: Point3, radius: f32, mat: Arc<dyn Material>) -> Self {
+    /// Creates a stationary sphere; negative radii are clamped to zero.
+    pub const fn new(center: Point3, radius: f32, mat: Arc<dyn Material>) -> Sphere {
         Self {
-            center,
+            center: Ray::new(center, Vec3::zero()),
             radius: radius.max(0.0),
             mat,
         }
+    }
+
+    /// Enable a moving sphere by passing the center at `time=1`
+    pub fn motion(mut self, to: Point3) -> Self {
+        self.center = Ray::new(self.center.origin(), to - self.center.origin());
+
+        self
     }
 }
 
 impl Hittable for Sphere {
     fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
-        let oc = self.center - r.origin();
+        let current_center = self.center.at(r.time());
+        let oc = current_center - r.origin();
         let a = r.direction().length_squared();
         let h = Vec3::dot(&r.direction(), &oc);
         let c = oc.length_squared() - self.radius * self.radius;
@@ -49,7 +57,7 @@ impl Hittable for Sphere {
 
         rec.t = root;
         rec.p = r.at(rec.t);
-        let outward_normal = (rec.p - self.center) / self.radius;
+        let outward_normal = (rec.p - current_center) / self.radius;
         rec.set_face_normal(r, outward_normal);
         rec.mat = Some(self.mat.clone());
 

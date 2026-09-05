@@ -8,8 +8,7 @@ use rayon::prelude::*;
 use crate::{
     hittable::Hittable,
     optical::optics::ray_color,
-    utilities::random::random_f32,
-    utilities::{Color, Point3, Ray, Vec3, color},
+    utilities::{Color, Point3, Ray, Vec3, color, random::random_f32},
 };
 
 /// Camera configuration parameters.
@@ -203,6 +202,7 @@ impl Camera {
     fn get_ray(&self, i: u32, j: u32) -> Ray {
         // Construct a camera ray originating from the defocus disk and directed at a randomly
         // sampled point around the pixel location i, j.
+        // with a random spacetime to simulate motion blur
 
         let offset = Camera::sample_square();
         let pixel_sample = self.pixel00_loc
@@ -215,8 +215,9 @@ impl Camera {
             self.defocus_disk_sample()
         };
         let ray_direction = pixel_sample - ray_origin;
+        let ray_time = random_f32();
 
-        Ray::new(ray_origin, ray_direction)
+        Ray::new(ray_origin, ray_direction).set_time(ray_time)
     }
 
     fn sample_square() -> Vec3 {
