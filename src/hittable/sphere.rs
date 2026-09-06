@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::hittable::{HitRecord, Hittable};
 use crate::optical::material::Material;
-use crate::utilities::{Interval, Ray};
+use crate::utilities::{Aabb, Interval, Ray};
 use crate::utilities::{Point3, Vec3};
 
 /// A sphere, defined by its center, radius, and material.
@@ -11,21 +11,28 @@ pub struct Sphere {
     center: Ray,
     radius: f32,
     mat: Arc<dyn Material>,
+    bbox: Aabb,
 }
 
 impl Sphere {
     /// Creates a stationary sphere; negative radii are clamped to zero.
-    pub const fn new(center: Point3, radius: f32, mat: Arc<dyn Material>) -> Sphere {
+    pub fn new(center: Point3, radius: f32, mat: Arc<dyn Material>) -> Sphere {
+        let rvec = Vec3::new(radius, radius, radius);
+        let bbox = Aabb::extrema(&(center - rvec), &(center + rvec));
         Self {
             center: Ray::new(center, Vec3::zero()),
             radius: radius.max(0.0),
             mat,
+            bbox,
         }
     }
 
-    /// Enable a moving sphere by passing the center at `time=1`
+    /// Enable a moving sphere by passing the center at `time=1`.
     pub fn motion(mut self, to: Point3) -> Self {
+        let rvec = Vec3::new(self.radius, self.radius, self.radius);
+        let to_box = Aabb::extrema(&(to - rvec), &(to + rvec));
         self.center = Ray::new(self.center.origin(), to - self.center.origin());
+        self.bbox = Aabb::merge(&self.bbox, &to_box);
 
         self
     }
@@ -62,5 +69,9 @@ impl Hittable for Sphere {
         rec.mat = Some(self.mat.clone());
 
         true
+    }
+
+    fn bounding_box(&self) -> Aabb {
+        self.bbox
     }
 }

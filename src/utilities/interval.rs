@@ -1,5 +1,5 @@
 /// A real interval from `min` to `max`.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct Interval {
     /// The lower bound.
     pub min: f32,
@@ -8,9 +8,17 @@ pub struct Interval {
 }
 
 impl Interval {
-    /// Creates an interval from its bounds.
+    /// Create an interval from its bounds.
     pub const fn new(min: f32, max: f32) -> Interval {
         Interval { min, max }
+    }
+
+    /// Create the interval tightly enclosing the two input intervals.
+    pub const fn merge(a: &Interval, b: &Interval) -> Interval {
+        Interval {
+            min: a.min.min(b.min),
+            max: a.max.max(b.max),
+        }
     }
 
     /// The length of the interval.
@@ -52,5 +60,12 @@ impl Interval {
             min: -f32::INFINITY,
             max: f32::INFINITY,
         }
+    }
+
+    /// Padding a interval by a given amount.
+    pub const fn expand(self, delta: f32) -> Self {
+        let padding = delta / 2.0;
+
+        Interval::new(self.min - padding, self.max + padding)
     }
 }

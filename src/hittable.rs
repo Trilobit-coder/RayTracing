@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::optical::material::Material;
+use crate::utilities::Aabb;
 use crate::utilities::Interval;
 use crate::utilities::Ray;
 use crate::utilities::{Point3, Vec3};
@@ -24,6 +25,8 @@ pub struct HitRecord {
 pub trait Hittable: Send + Sync {
     /// Tests the ray against the object; on a hit within `ray_t`, fills `rec` and returns `true`.
     fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
+    /// Return the bounding AABB of a hittable object.
+    fn bounding_box(&self) -> Aabb;
 }
 
 impl HitRecord {
@@ -40,10 +43,13 @@ impl HitRecord {
     }
 }
 
+/// The bounding volume hierarchy node.
+pub mod bvh;
 /// A collection of [`Hittable`] objects.
 pub mod hittable_list;
 /// A sphere primitive.
 pub mod sphere;
 
+pub use bvh::BvhNode;
 pub use hittable_list::HittableList;
 pub use sphere::Sphere;
