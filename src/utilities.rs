@@ -2,6 +2,8 @@
 pub mod aabb;
 /// Colors and PPM image output.
 pub mod color;
+/// Image loading for textures.
+pub mod image;
 /// Real-number intervals with containment and clamping.
 pub mod interval;
 /// Random number helpers.
@@ -13,6 +15,7 @@ pub mod vec3;
 
 pub use aabb::Aabb;
 pub use color::Color;
+pub use image::Image;
 pub use interval::Interval;
 pub use ray::Ray;
 pub use vec3::{Point3, Vec3};

@@ -12,5 +12,7 @@
 pub mod hittable;
 /// Camera, light transport, and surface materials.
 pub mod optical;
+/// Sample scenes.
+pub mod scene;
 /// Math and I/O helpers: vectors, rays, colors, intervals, RNG.
 pub mod utilities;

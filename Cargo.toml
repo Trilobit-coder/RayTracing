@@ -5,7 +5,11 @@ edition = "2024"
 
 [dependencies]
 fastrand = "2.5.0"
-rayon = "1.12.0"
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+] }
+rayon = "1.12"
 
 [profile.release]
 lto = "thin"

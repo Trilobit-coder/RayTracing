@@ -19,6 +19,10 @@ pub struct HitRecord {
     pub t: f32,
     /// Whether the ray hit the front face of the surface.
     pub front_face: bool,
+    /// `u,v` surface coordinates of the ray-object hit point.
+    pub u: f32,
+    /// `u,v` surface coordinates of the ray-object hit point.
+    pub v: f32,
 }
 
 /// An object a ray can hit.
@@ -40,6 +44,19 @@ impl HitRecord {
         } else {
             outward_normal * -1.0
         };
+    }
+
+    /// Return an empty `HitRecord`
+    pub fn empty() -> HitRecord {
+        HitRecord {
+            p: Point3::new(0.0, 0.0, 0.0),
+            normal: Vec3::new(0.0, 0.0, 0.0),
+            mat: None,
+            t: 0.0,
+            front_face: false,
+            u: 0.0,
+            v: 0.0,
+        }
     }
 }
 

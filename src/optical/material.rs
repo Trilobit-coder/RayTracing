@@ -1,6 +1,12 @@
+use std::sync::Arc;
+
 use crate::{
     hittable::HitRecord,
-    optical::optics::{reflect, reflectance, refract},
+    optical::{
+        Texture,
+        optics::{reflect, reflectance, refract},
+        texture::SolidColor,
+    },
     utilities::{Color, Ray, Vec3, random::random_f32},
 };
 
@@ -14,15 +20,21 @@ pub trait Material: Send + Sync {
 }
 
 /// A diffuse material with a constant albedo.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Clone)]
 pub struct Lambertian {
-    albedo: Color,
+    tex: Arc<dyn Texture>,
 }
 
 impl Lambertian {
     /// Creates a Lambertian material with the given albedo.
-    pub const fn new(albedo: Color) -> Lambertian {
-        Lambertian { albedo }
+    pub fn new(albedo: Color) -> Lambertian {
+        Lambertian {
+            tex: Arc::new(SolidColor::new(albedo)) as Arc<dyn Texture>,
+        }
+    }
+    /// Creates a Lambertian material with the given texture.
+    pub const fn from_texture(tex: Arc<dyn Texture>) -> Lambertian {
+        Lambertian { tex }
     }
 }
 
@@ -36,7 +48,7 @@ impl Material for Lambertian {
         }
 
         let scattered = Ray::new(rec.p, scatter_direction).set_time(r_in.time());
-        let attenuation = self.albedo;
+        let attenuation = self.tex.value(rec.u, rec.v, rec.p);
 
         Some((attenuation, scattered))
     }

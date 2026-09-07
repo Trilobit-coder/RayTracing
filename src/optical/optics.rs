@@ -1,6 +1,6 @@
 use crate::{
     hittable::{HitRecord, Hittable},
-    utilities::{Color, Interval, Point3, Ray, Vec3},
+    utilities::{Color, Interval, Ray, Vec3},
 };
 
 /// Returns the color seen along `r` as it bounces through `world`, up to `depth` bounces.
@@ -10,13 +10,7 @@ pub fn ray_color<T: Hittable>(r: &Ray, depth: u32, world: &T) -> Color {
         return Color::zero();
     }
 
-    let mut rec = HitRecord {
-        p: Point3::new(0.0, 0.0, 0.0),
-        normal: Vec3::new(0.0, 0.0, 0.0),
-        mat: None,
-        t: 0.0,
-        front_face: false,
-    };
+    let mut rec = HitRecord::empty();
 
     if world.hit(r, Interval::new(0.001, f32::INFINITY), &mut rec) {
         if let Some(mat) = rec.mat.as_ref()
