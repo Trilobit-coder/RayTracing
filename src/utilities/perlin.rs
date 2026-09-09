@@ -32,7 +32,7 @@ impl Perlin {
     }
 
     /// Returns the noise value at point `p`.
-    pub fn noise(&self, p: Point3) -> f32 {
+    pub fn noise(&self, p: &Point3) -> f32 {
         let u = p.x() - f32::floor(p.x());
         let v = p.y() - f32::floor(p.y());
         let w = p.z() - f32::floor(p.z());
@@ -58,13 +58,13 @@ impl Perlin {
     }
 
     /// Returns the absolute value of summed octaves of Perlin noise at increasing frequencies (turbulence).
-    pub fn turb(&self, p: Point3, depth: usize) -> f32 {
+    pub fn turb(&self, p: &Point3, depth: usize) -> f32 {
         let mut accum = 0.0;
-        let mut temp_p = p;
+        let mut temp_p = *p;
         let mut weight = 1.0;
 
         for _ in 0..depth {
-            accum += weight * self.noise(temp_p);
+            accum += weight * self.noise(&temp_p);
             weight *= 0.5;
             temp_p *= 2.0;
         }

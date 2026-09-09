@@ -21,6 +21,7 @@ impl Aabb {
             y: *y,
             z: *z,
         }
+        .pad_to_minimums()
     }
 
     /// An empty AABB.
@@ -32,6 +33,15 @@ impl Aabb {
         }
     }
 
+    /// An universe AABB.
+    pub const fn universe() -> Aabb {
+        Aabb {
+            x: Interval::universe(),
+            y: Interval::universe(),
+            z: Interval::universe(),
+        }
+    }
+
     /// Create an AABB from two points as extrema for the bounding box.
     pub const fn extrema(a: &Point3, b: &Point3) -> Aabb {
         // particular minimum/maximum coordinate order.
@@ -40,6 +50,7 @@ impl Aabb {
             y: Interval::new(a.y().min(b.y()), a.y().max(b.y())),
             z: Interval::new(a.z().min(b.z()), a.z().max(b.z())),
         }
+        .pad_to_minimums()
     }
 
     /// Create an AABB tightly enclosing the two input AABBs.
@@ -88,6 +99,7 @@ impl Aabb {
 
         true
     }
+
     /// Compare AABBs along a given axis.
     pub fn compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>, axis_index: usize) -> Ordering {
         let a_bbox = a.bounding_box();
@@ -118,5 +130,21 @@ impl Aabb {
         } else {
             if self.y.size() > self.z.size() { 1 } else { 2 }
         }
+    }
+
+    const fn pad_to_minimums(mut self) -> Self {
+        // Adjust the AABB so that no side is narrower than some delta, padding if necessary.
+        let delta = 0.0001;
+        if self.x.size() < delta {
+            self.x = self.x.expand(delta);
+        }
+        if self.y.size() < delta {
+            self.y = self.y.expand(delta);
+        }
+        if self.z.size() < delta {
+            self.z = self.z.expand(delta);
+        }
+
+        self
     }
 }

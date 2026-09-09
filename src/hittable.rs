@@ -64,9 +64,12 @@ impl HitRecord {
 pub mod bvh;
 /// A collection of [`Hittable`] objects.
 pub mod hittable_list;
+/// A parallelogram primitive.
+pub mod quad;
 /// A sphere primitive.
 pub mod sphere;
 
 pub use bvh::BvhNode;
 pub use hittable_list::HittableList;
+pub use quad::Quad;
 pub use sphere::Sphere;

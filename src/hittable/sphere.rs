@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use crate::hittable::{HitRecord, Hittable};
 use crate::optical::material::Material;
-use crate::optical::texture::UVMap;
 use crate::utilities::{Aabb, Interval, Ray};
 use crate::utilities::{Point3, Vec3};
 
@@ -37,6 +36,20 @@ impl Sphere {
         self.bbox = Aabb::merge(&self.bbox, &to_box);
 
         self
+    }
+
+    fn uv(p: &Point3) -> (f32, f32) {
+        // p: a given point on the sphere of radius one, centered at the origin.
+        // u: returned value [0,1] of angle around the Y axis from X=-1.
+        // v: returned value [0,1] of angle from Y=-1 to Y=+1.
+        //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
+        //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
+        //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
+
+        let theta = f32::acos(-p.y());
+        let phi = f32::atan2(-p.z(), p.x()) + PI;
+
+        (phi / (2.0 * PI), theta / PI)
     }
 }
 
@@ -76,21 +89,5 @@ impl Hittable for Sphere {
 
     fn bounding_box(&self) -> Aabb {
         self.bbox
-    }
-}
-
-impl UVMap for Sphere {
-    fn uv(p: &Point3) -> (f32, f32) {
-        // p: a given point on the sphere of radius one, centered at the origin.
-        // u: returned value [0,1] of angle around the Y axis from X=-1.
-        // v: returned value [0,1] of angle from Y=-1 to Y=+1.
-        //     <1 0 0> yields <0.50 0.50>       <-1  0  0> yields <0.00 0.50>
-        //     <0 1 0> yields <0.50 1.00>       < 0 -1  0> yields <0.50 0.00>
-        //     <0 0 1> yields <0.25 0.50>       < 0  0 -1> yields <0.75 0.50>
-
-        let theta = f32::acos(-p.y());
-        let phi = f32::atan2(-p.z(), p.x()) + PI;
-
-        (phi / (2.0 * PI), theta / PI)
     }
 }

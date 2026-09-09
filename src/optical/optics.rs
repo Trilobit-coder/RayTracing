@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Returns the color seen along `r` as it bounces through `world`, up to `depth` bounces.
-pub fn ray_color<T: Hittable>(r: &Ray, depth: u32, world: &T) -> Color {
+pub fn ray_color<T: Hittable>(r: &Ray, depth: u32, world: &T, background: &Color) -> Color {
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if depth == 0 {
         return Color::zero();
@@ -12,19 +12,25 @@ pub fn ray_color<T: Hittable>(r: &Ray, depth: u32, world: &T) -> Color {
 
     let mut rec = HitRecord::empty();
 
-    if world.hit(r, Interval::new(0.001, f32::INFINITY), &mut rec) {
-        if let Some(mat) = rec.mat.as_ref()
-            && let Some((attenuation, scattered)) = mat.scatter(r, &rec)
-        {
-            return attenuation * ray_color(&scattered, depth - 1, world);
-        }
-        return Color::zero();
+    // If the ray hits nothing, return the background color.
+    if !world.hit(r, Interval::new(0.001, f32::INFINITY), &mut rec) {
+        return *background;
     }
 
-    let unit_direction = Vec3::unit_vector(&r.direction());
-    let a = 0.5 * (unit_direction.y() + 1.0);
-
-    (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+    match rec.mat.as_ref() {
+        Some(mat) => {
+            let color_from_emission = mat.emitted(rec.u, rec.v, &rec.p);
+            match mat.scatter(r, &rec) {
+                Some((attenuation, scattered)) => {
+                    let color_from_scatter =
+                        attenuation * ray_color(&scattered, depth - 1, world, background);
+                    color_from_emission + color_from_scatter
+                }
+                None => color_from_emission,
+            }
+        }
+        None => Color::zero(),
+    }
 }
 
 /// Reflects vector `v` about the normal `n`.

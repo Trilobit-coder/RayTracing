@@ -7,7 +7,7 @@ use crate::{
         optics::{reflect, reflectance, refract},
         texture::SolidColor,
     },
-    utilities::{Color, Ray, Vec3, random::random_f32},
+    utilities::{Color, Point3, Ray, Vec3, random::random_f32},
 };
 
 /// A material determines how rays scatter when they hit a surface.
@@ -16,6 +16,11 @@ pub trait Material: Send + Sync {
     /// its attenuation, or `None` if the ray is absorbed.
     fn scatter(&self, _r_in: &Ray, _rec: &HitRecord) -> Option<(Color, Ray)> {
         None
+    }
+
+    /// emitting a color (light), will be completely non-emitting as default.
+    fn emitted(&self, _u: f32, _v: f32, _p: &Point3) -> Color {
+        Color::new(0., 0., 0.)
     }
 }
 
@@ -48,7 +53,7 @@ impl Material for Lambertian {
         }
 
         let scattered = Ray::new(rec.p, scatter_direction).set_time(r_in.time());
-        let attenuation = self.tex.value(rec.u, rec.v, rec.p);
+        let attenuation = self.tex.value(rec.u, rec.v, &rec.p);
 
         Some((attenuation, scattered))
     }
@@ -122,5 +127,30 @@ impl Material for Dielectric {
 
         let scattered = Ray::new(rec.p, direction).set_time(r_in.time());
         Some((attenuation, scattered))
+    }
+}
+
+/// A light emitting material.
+pub struct DiffuseLight {
+    tex: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    /// create a diffuse light material from texture.
+    pub fn new(tex: Arc<dyn Texture>) -> DiffuseLight {
+        DiffuseLight { tex }
+    }
+
+    /// craete a diffuse light material from color, will behave in the same way as solid color material.
+    pub fn from_color(emit: Color) -> DiffuseLight {
+        DiffuseLight {
+            tex: Arc::new(SolidColor::new(emit)),
+        }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn emitted(&self, u: f32, v: f32, p: &Point3) -> Color {
+        self.tex.value(u, v, p)
     }
 }

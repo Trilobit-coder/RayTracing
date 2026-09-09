@@ -5,18 +5,7 @@ use crate::utilities::{Color, Image, Point3, perlin::Perlin};
 /// A texture maps surface coordinates to a color.
 pub trait Texture: Send + Sync {
     /// Samples the texture at texture coordinates `(u, v)` and surface point `p`.
-    fn value(&self, u: f32, v: f32, p: Point3) -> Color;
-}
-
-/// A trait for mapping a 3D surface point to 2D texture coordinates (u, v).
-/// Typically used to feed into a [`Texture`] for sampling.
-///
-/// The coordinates are usually expected to be in the range [0.0, 1.0], but
-/// implementations may return any range as long as the consuming texture
-/// handles it correctly (e.g., with wrap or clamp modes).
-pub trait UVMap {
-    /// Returns the (u, v) texture coordinates for the given surface point `p`.
-    fn uv(p: &Point3) -> (f32, f32);
+    fn value(&self, u: f32, v: f32, p: &Point3) -> Color;
 }
 
 /// A texture that returns the same color everywhere.
@@ -40,7 +29,7 @@ impl SolidColor {
 }
 
 impl Texture for SolidColor {
-    fn value(&self, _u: f32, _v: f32, _p: Point3) -> Color {
+    fn value(&self, _u: f32, _v: f32, _p: &Point3) -> Color {
         self.albedo
     }
 }
@@ -74,7 +63,7 @@ impl CheckerTexture {
 }
 
 impl Texture for CheckerTexture {
-    fn value(&self, _u: f32, _v: f32, p: Point3) -> Color {
+    fn value(&self, _u: f32, _v: f32, p: &Point3) -> Color {
         let x_int = f32::floor(self.inv_scale * p.x()) as i32;
         let y_int = f32::floor(self.inv_scale * p.y()) as i32;
         let z_int = f32::floor(self.inv_scale * p.z()) as i32;
@@ -105,7 +94,7 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, u: f32, v: f32, _p: Point3) -> Color {
+    fn value(&self, u: f32, v: f32, _p: &Point3) -> Color {
         self.image.pixel_data(u, v)
     }
 }
@@ -127,7 +116,7 @@ impl NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn value(&self, _u: f32, _v: f32, p: Point3) -> Color {
+    fn value(&self, _u: f32, _v: f32, p: &Point3) -> Color {
         Color::new(0.5, 0.5, 0.5)
             * (1.0 + f32::sin(self.scale * p.z() + 10. * self.noise.turb(p, 7)))
     }

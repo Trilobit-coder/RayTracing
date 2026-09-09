@@ -1,11 +1,10 @@
 use std::io::Result;
 use std::sync::Arc;
 
-use crate::hittable::{BvhNode, HittableList, Sphere};
-use crate::optical::material::{Dielectric, Lambertian, Material, Metal};
+use crate::hittable::{BvhNode, HittableList, Quad, Sphere};
+use crate::optical::material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use crate::optical::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::optical::{Camera, camera};
-use crate::scene::Scene::{BoundingSphere, CheckerSphere, Earth, PerlinSphere};
 use crate::utilities::Point3;
 use crate::utilities::random::{random_f32, random_f32_range};
 use crate::utilities::{Color, Vec3};
@@ -20,15 +19,24 @@ pub enum Scene {
     Earth,
     /// A sphere with perlin noise
     PerlinSphere,
+    /// Five quads
+    Quads,
+    /// Simple light source
+    Light,
+    /// Cornell box
+    CornellBox,
 }
 
 /// build and render a scene based on the scene option
 pub fn run_scene(option: Scene) -> Result<()> {
     match option {
-        BoundingSphere => bounding_sphere(),
-        CheckerSphere => checkered_sphere(),
-        Earth => earth(),
-        PerlinSphere => perlin_sphere(),
+        Scene::BoundingSphere => bounding_sphere(),
+        Scene::CheckerSphere => checkered_sphere(),
+        Scene::Earth => earth(),
+        Scene::PerlinSphere => perlin_sphere(),
+        Scene::Quads => quads(),
+        Scene::Light => simple_light(),
+        Scene::CornellBox => cornell_box(),
     }
 }
 
@@ -189,6 +197,169 @@ fn perlin_sphere() -> Result<()> {
             Vec3::new(0., 1., 0.),
         )
         .focus(0., 10.);
+
+    let camera = Camera::new(camera_config);
+
+    camera.render(&world)
+}
+
+fn quads() -> Result<()> {
+    let mut world = HittableList::new();
+
+    // Quads
+    let left_red = Quad::new(
+        Point3::new(-3., -2., 5.),
+        Vec3::new(0., 0., -4.),
+        Vec3::new(0., 4., 0.),
+        Arc::new(Lambertian::new(Color::new(1.0, 0.2, 0.2))),
+    );
+    let back_green = Quad::new(
+        Point3::new(-2., -2., 0.),
+        Vec3::new(4., 0., 0.),
+        Vec3::new(0., 4., 0.),
+        Arc::new(Lambertian::new(Color::new(0.2, 1.0, 0.2))),
+    );
+    let right_blue = Quad::new(
+        Point3::new(3., -2., 1.),
+        Vec3::new(0., 0., 4.),
+        Vec3::new(0., 4., 0.),
+        Arc::new(Lambertian::new(Color::new(0.2, 0.2, 1.0))),
+    );
+    let upper_orange = Quad::new(
+        Point3::new(-2., 3., 1.),
+        Vec3::new(4., 0., 0.),
+        Vec3::new(0., 0., 4.),
+        Arc::new(Lambertian::new(Color::new(1.0, 0.5, 0.0))),
+    );
+    let lower_teal = Quad::new(
+        Point3::new(-2., -3., 5.),
+        Vec3::new(4., 0., 0.),
+        Vec3::new(0., 0., -4.),
+        Arc::new(Lambertian::new(Color::new(0.2, 0.8, 0.8))),
+    );
+
+    world.add(Box::new(left_red));
+    world.add(Box::new(back_green));
+    world.add(Box::new(right_blue));
+    world.add(Box::new(upper_orange));
+    world.add(Box::new(lower_teal));
+
+    let camera_config = camera::Config::new()
+        .image(16.0 / 9.0, 800)
+        .quality(200, 50)
+        .view(
+            80.,
+            Point3::new(0., 0., 9.),
+            Point3::new(0., 0., 0.),
+            Vec3::new(0., 1., 0.),
+        )
+        .focus(0., 10.);
+
+    let camera = Camera::new(camera_config);
+
+    camera.render(&world)
+}
+
+fn simple_light() -> Result<()> {
+    let mut world = HittableList::new();
+
+    let pertext = Arc::new(NoiseTexture::new(4.));
+    world.add(Box::new(Sphere::new(
+        Point3::new(0., -1000., 0.),
+        1000.,
+        Arc::new(Lambertian::from_texture(pertext.clone())),
+    )));
+    world.add(Box::new(Sphere::new(
+        Point3::new(0., 2., 0.),
+        2.,
+        Arc::new(Lambertian::from_texture(pertext)),
+    )));
+
+    let difflight = Arc::new(DiffuseLight::from_color(Color::new(4., 4., 4.)));
+    world.add(Box::new(Sphere::new(
+        Point3::new(0., 7., 0.),
+        2.,
+        difflight.clone(),
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(3., 1., -2.),
+        Vec3::new(2., 0., 0.),
+        Vec3::new(0., 2., 0.),
+        difflight,
+    )));
+
+    let camera_config = camera::Config::new()
+        .image(16.0 / 9.0, 800)
+        .quality(200, 50)
+        .view(
+            20.,
+            Point3::new(26., 3., 6.),
+            Point3::new(0., 2., 0.),
+            Vec3::new(0., 1., 0.),
+        )
+        .focus(0., 10.)
+        .bgcolor(Color::zero());
+
+    let camera = Camera::new(camera_config);
+
+    camera.render(&world)
+}
+
+fn cornell_box() -> Result<()> {
+    let mut world = HittableList::new();
+
+    let red = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::from_color(Color::new(15., 15., 15.)));
+
+    world.add(Box::new(Quad::new(
+        Point3::new(555., 0., 0.),
+        Vec3::new(0., 555., 0.),
+        Vec3::new(0., 0., 555.),
+        green,
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(0., 0., 0.),
+        Vec3::new(0., 555., 0.),
+        Vec3::new(0., 0., 555.),
+        red,
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(343., 554., 332.),
+        Vec3::new(-130., 0., 0.),
+        Vec3::new(0., 0., -105.),
+        light,
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(0., 0., 0.),
+        Vec3::new(555., 0., 0.),
+        Vec3::new(0., 0., 555.),
+        white.clone(),
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(555., 555., 555.),
+        Vec3::new(-555., 0., 0.),
+        Vec3::new(0., 0., -555.),
+        white.clone(),
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(0., 0., 555.),
+        Vec3::new(555., 0., 0.),
+        Vec3::new(0., 555., 0.),
+        white,
+    )));
+
+    let camera_config = camera::Config::new()
+        .image(1.0, 600)
+        .quality(200, 50)
+        .view(
+            40.,
+            Point3::new(278., 278., -800.),
+            Point3::new(278., 278., 0.),
+            Vec3::new(0., 1., 0.),
+        )
+        .bgcolor(Color::zero());
 
     let camera = Camera::new(camera_config);
 

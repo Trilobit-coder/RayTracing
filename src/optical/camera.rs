@@ -35,6 +35,9 @@ pub struct Config {
     pub defocus_angle: f32,
     /// Distance from camera lookfrom point to plane of perfect focus.
     pub focus_dist: f32,
+
+    /// Scene background color.
+    pub background: Color,
 }
 
 impl Config {
@@ -44,6 +47,12 @@ impl Config {
     }
 
     /// Sets the image aspect ratio and width.
+    ///
+    /// default:
+    /// ```ignore
+    /// aspect_ratio = 16.0 / 9.0;
+    /// image_width = 400;
+    /// ```
     pub fn image(mut self, aspect_ratio: f32, image_width: u32) -> Self {
         self.aspect_ratio = aspect_ratio;
         self.image_width = image_width;
@@ -52,6 +61,12 @@ impl Config {
     }
 
     /// Sets samples per pixel and max ray depth.
+    ///
+    /// default:
+    /// ```ignore
+    /// samples_per_pixel = 100;
+    /// max_depth = 50;
+    /// ```
     pub fn quality(mut self, samples_per_pixel: u32, max_depth: u32) -> Self {
         self.samples_per_pixel = samples_per_pixel;
         self.max_depth = max_depth;
@@ -60,6 +75,14 @@ impl Config {
     }
 
     /// Sets the view angle, camera position, target, and up direction.
+    ///
+    /// default:
+    /// ```ignore
+    /// vfov = 100;
+    /// lookfrom = Point3::zero(),
+    /// lookat = Point3::new(0.0, 0.0, -1.0),
+    /// vup = Vec3::new(0.0, 1.0, 0.0),
+    /// ```
     pub fn view(mut self, vfov: f32, lookfrom: Point3, lookat: Point3, vup: Vec3) -> Self {
         self.vfov = vfov;
         self.lookfrom = lookfrom;
@@ -70,9 +93,27 @@ impl Config {
     }
 
     /// Sets the defocus angle and focus distance.
+    ///
+    /// default:
+    /// ```ignore
+    /// defocus_angle = 0.0,
+    /// focus_dist = 10.0,
+    /// ```
     pub fn focus(mut self, defocus_angle: f32, focus_dist: f32) -> Self {
         self.defocus_angle = defocus_angle;
         self.focus_dist = focus_dist;
+
+        self
+    }
+
+    /// Sets the defocus angle and focus distance.
+    ///
+    /// default:
+    /// ```ignore
+    /// background = Color::new(0.70, 0.80, 1.00)
+    /// ```
+    pub fn bgcolor(mut self, background: Color) -> Self {
+        self.background = background;
 
         self
     }
@@ -91,6 +132,7 @@ impl Default for Config {
             vup: Vec3::new(0.0, 1.0, 0.0),
             defocus_angle: 0.0,
             focus_dist: 10.0,
+            background: Color::new(0.70, 0.80, 1.00),
         }
     }
 }
@@ -101,6 +143,7 @@ pub struct Camera {
     image_height: u32,      // Rendered image height
     samples_per_pixel: u32, // Count of random samples for each pixel
     max_depth: u32,         // Maximum number of ray bounces into scene
+    background: Color,      // Scene background color
 
     center: Point3,           // Camera center
     pixel00_loc: Point3,      // Location of pixel 0, 0
@@ -157,6 +200,7 @@ impl Camera {
             image_height,
             samples_per_pixel: config.samples_per_pixel,
             max_depth: config.max_depth,
+            background: config.background,
 
             center,
             pixel00_loc,
@@ -185,7 +229,7 @@ impl Camera {
                 let mut pixel_color = Color::zero();
                 for _ in 0..self.samples_per_pixel {
                     let r: Ray = self.get_ray(i, j);
-                    pixel_color += ray_color(&r, self.max_depth, world);
+                    pixel_color += ray_color(&r, self.max_depth, world, &self.background);
                 }
                 pixel_color * self.pixel_samples_scale
             })
