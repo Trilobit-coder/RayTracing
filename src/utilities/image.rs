@@ -16,7 +16,7 @@ pub struct Image {
 impl Image {
     /// Directories searched, in order, for `filename` when it does not name an
     /// existing file. The empty prefix means "try the filename as given".
-    pub const SEARCH_DIRS: [&'static str; 2] = ["", "assets"];
+    pub const SEARCH_DIRS: [&'static str; 2] = ["assets", ""];
 
     /// Loads an image from `filename` in any format the [`image`] crate supports.
     ///

@@ -6,6 +6,8 @@ pub mod color;
 pub mod image;
 /// Real-number intervals with containment and clamping.
 pub mod interval;
+/// Perlin noise generator
+pub mod perlin;
 /// Random number helpers.
 pub mod random;
 /// Rays in 3D space.

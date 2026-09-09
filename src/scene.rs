@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use crate::hittable::{BvhNode, HittableList, Sphere};
 use crate::optical::material::{Dielectric, Lambertian, Material, Metal};
-use crate::optical::texture::{CheckerTexture, ImageTexture};
+use crate::optical::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::optical::{Camera, camera};
-use crate::scene::Scene::{BoundingSphere, CheckerSphere, Earth};
+use crate::scene::Scene::{BoundingSphere, CheckerSphere, Earth, PerlinSphere};
 use crate::utilities::Point3;
 use crate::utilities::random::{random_f32, random_f32_range};
 use crate::utilities::{Color, Vec3};
@@ -16,8 +16,10 @@ pub enum Scene {
     BoundingSphere,
     /// A scene with spheres having checker texture
     CheckerSphere,
-    /// A globe
+    /// A globe with image mapping
     Earth,
+    /// A sphere with perlin noise
+    PerlinSphere,
 }
 
 /// build and render a scene based on the scene option
@@ -26,6 +28,7 @@ pub fn run_scene(option: Scene) -> Result<()> {
         BoundingSphere => bounding_sphere(),
         CheckerSphere => checkered_sphere(),
         Earth => earth(),
+        PerlinSphere => perlin_sphere(),
     }
 }
 
@@ -163,4 +166,31 @@ fn earth() -> Result<()> {
     let camera = Camera::new(camera_config);
 
     camera.render(&HittableList::from(Box::new(globe)))
+}
+
+fn perlin_sphere() -> Result<()> {
+    let pertext = Arc::new(NoiseTexture::new(4.));
+    let earth_surface = Arc::new(Lambertian::from_texture(pertext));
+
+    let ground = Sphere::new(Point3::new(0., -1000., 0.), 1000., earth_surface.clone());
+    let s0 = Sphere::new(Point3::new(0., 2., 0.), 2., earth_surface);
+
+    let mut world = HittableList::new();
+    world.add(Box::new(ground));
+    world.add(Box::new(s0));
+
+    let camera_config = camera::Config::new()
+        .image(16.0 / 9.0, 1200)
+        .quality(200, 50)
+        .view(
+            20.,
+            Point3::new(12., 2., 3.),
+            Point3::new(0., 0., 0.),
+            Vec3::new(0., 1., 0.),
+        )
+        .focus(0., 10.);
+
+    let camera = Camera::new(camera_config);
+
+    camera.render(&world)
 }

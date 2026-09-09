@@ -8,6 +8,7 @@ The followings are same sample outputs generated along the development
 
 ![output_image1](./assets/out.png)
 ![output_image2](./assets/out2.png)
+![output_image3](./assets/out3.png)
 
 ## Usage
 

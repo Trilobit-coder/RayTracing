@@ -1,6 +1,6 @@
 use std::{path::Path, sync::Arc};
 
-use crate::utilities::{Color, Image, Point3};
+use crate::utilities::{Color, Image, Point3, perlin::Perlin};
 
 /// A texture maps surface coordinates to a color.
 pub trait Texture: Send + Sync {
@@ -107,5 +107,28 @@ impl ImageTexture {
 impl Texture for ImageTexture {
     fn value(&self, u: f32, v: f32, _p: Point3) -> Color {
         self.image.pixel_data(u, v)
+    }
+}
+
+/// A texture that samples Perlin noise to produce random values.
+pub struct NoiseTexture {
+    noise: Perlin,
+    scale: f32,
+}
+
+impl NoiseTexture {
+    /// Creates a new `NoiseTexture` with a freshly generated Perlin noise table.
+    pub fn new(scale: f32) -> NoiseTexture {
+        NoiseTexture {
+            noise: Perlin::new(),
+            scale,
+        }
+    }
+}
+
+impl Texture for NoiseTexture {
+    fn value(&self, _u: f32, _v: f32, p: Point3) -> Color {
+        Color::new(0.5, 0.5, 0.5)
+            * (1.0 + f32::sin(self.scale * p.z() + 10. * self.noise.turb(p, 7)))
     }
 }
