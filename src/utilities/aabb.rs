@@ -1,16 +1,19 @@
-use std::{cmp::Ordering, sync::Arc};
+use std::{cmp::Ordering, ops, sync::Arc};
 
 use crate::{
     hittable::Hittable,
-    utilities::{Interval, Point3, Ray},
+    utilities::{Interval, Point3, Ray, Vec3},
 };
 
 /// An axis-aligned bounding box with intervals along all axises.
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct Aabb {
-    x: Interval,
-    y: Interval,
-    z: Interval,
+    /// side along x axis.
+    pub x: Interval,
+    /// side along y axis.
+    pub y: Interval,
+    /// side along z axis.
+    pub z: Interval,
 }
 
 impl Aabb {
@@ -146,5 +149,29 @@ impl Aabb {
         }
 
         self
+    }
+}
+
+// Aabb + Vec3
+impl ops::Add<Vec3> for Aabb {
+    type Output = Self;
+    fn add(self, offset: Vec3) -> Aabb {
+        Aabb {
+            x: self.x + offset.x(),
+            y: self.y + offset.y(),
+            z: self.z + offset.z(),
+        }
+    }
+}
+
+// Vec3 + Aabb
+impl ops::Add<Aabb> for Vec3 {
+    type Output = Aabb;
+    fn add(self, bbox: Aabb) -> Aabb {
+        Aabb {
+            x: self.x() + bbox.x,
+            y: self.y() + bbox.y,
+            z: self.z() + bbox.z,
+        }
     }
 }

@@ -249,6 +249,14 @@ impl ops::DivAssign<f32> for Vec3 {
     }
 }
 
+// -Vec3
+impl ops::Neg for Vec3 {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        -1.0 * self
+    }
+}
+
 // display: [e0, e1, e2]
 impl fmt::Display for Vec3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

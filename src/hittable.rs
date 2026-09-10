@@ -60,16 +60,23 @@ impl HitRecord {
     }
 }
 
+/// A block built by quads.
+pub mod block;
 /// The bounding volume hierarchy node.
 pub mod bvh;
 /// A collection of [`Hittable`] objects.
 pub mod hittable_list;
+/// A translated or rotated instance of a hittable object.
+pub mod instance;
 /// A parallelogram primitive.
 pub mod quad;
 /// A sphere primitive.
 pub mod sphere;
 
+pub use block::Block;
 pub use bvh::BvhNode;
 pub use hittable_list::HittableList;
+pub use instance::RotationY;
+pub use instance::Translate;
 pub use quad::Quad;
 pub use sphere::Sphere;

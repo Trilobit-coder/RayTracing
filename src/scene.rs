@@ -1,7 +1,7 @@
 use std::io::Result;
 use std::sync::Arc;
 
-use crate::hittable::{BvhNode, HittableList, Quad, Sphere};
+use crate::hittable::{Block, BvhNode, HittableList, Quad, RotationY, Sphere, Translate};
 use crate::optical::material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use crate::optical::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::optical::{Camera, camera};
@@ -347,8 +347,26 @@ fn cornell_box() -> Result<()> {
         Point3::new(0., 0., 555.),
         Vec3::new(555., 0., 0.),
         Vec3::new(0., 555., 0.),
-        white,
+        white.clone(),
     )));
+
+    let box1 = Arc::new(Block::new(
+        Point3::new(0., 0., 0.),
+        Point3::new(165., 330., 165.),
+        white.clone(),
+    ));
+    let box1 = Arc::new(RotationY::new(box1, 15.));
+    let box1 = Box::new(Translate::new(box1, Vec3::new(265., 0., 295.)));
+    world.add(box1);
+
+    let box2 = Arc::new(Block::new(
+        Point3::new(0., 0., 0.),
+        Point3::new(165., 165., 165.),
+        white,
+    ));
+    let box2 = Arc::new(RotationY::new(box2, -18.));
+    let box2 = Box::new(Translate::new(box2, Vec3::new(130., 0., 65.)));
+    world.add(box2);
 
     let camera_config = camera::Config::new()
         .image(1.0, 600)

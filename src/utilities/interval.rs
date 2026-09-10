@@ -1,3 +1,5 @@
+use std::ops;
+
 /// A real interval from `min` to `max`.
 #[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub struct Interval {
@@ -67,5 +69,27 @@ impl Interval {
         let padding = delta / 2.0;
 
         Interval::new(self.min - padding, self.max + padding)
+    }
+}
+
+// Interval + f32
+impl ops::Add<f32> for Interval {
+    type Output = Self;
+    fn add(self, offset: f32) -> Interval {
+        Interval {
+            min: self.min + offset,
+            max: self.max + offset,
+        }
+    }
+}
+
+// f32 + Interval
+impl ops::Add<Interval> for f32 {
+    type Output = Interval;
+    fn add(self, interval: Interval) -> Interval {
+        Interval {
+            min: self + interval.min,
+            max: self + interval.max,
+        }
     }
 }
