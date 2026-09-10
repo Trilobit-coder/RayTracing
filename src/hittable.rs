@@ -64,6 +64,8 @@ impl HitRecord {
 pub mod block;
 /// The bounding volume hierarchy node.
 pub mod bvh;
+/// A smoke or flog like constant medium.
+pub mod constant_medium;
 /// A collection of [`Hittable`] objects.
 pub mod hittable_list;
 /// A translated or rotated instance of a hittable object.
@@ -75,6 +77,7 @@ pub mod sphere;
 
 pub use block::Block;
 pub use bvh::BvhNode;
+pub use constant_medium::ConstantMedium;
 pub use hittable_list::HittableList;
 pub use instance::RotationY;
 pub use instance::Translate;

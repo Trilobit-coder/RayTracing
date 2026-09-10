@@ -1,7 +1,9 @@
 use std::io::Result;
 use std::sync::Arc;
 
-use crate::hittable::{Block, BvhNode, HittableList, Quad, RotationY, Sphere, Translate};
+use crate::hittable::{
+    Block, BvhNode, ConstantMedium, HittableList, Quad, RotationY, Sphere, Translate,
+};
 use crate::optical::material::{Dielectric, DiffuseLight, Lambertian, Material, Metal};
 use crate::optical::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::optical::{Camera, camera};
@@ -25,6 +27,8 @@ pub enum Scene {
     Light,
     /// Cornell box
     CornellBox,
+    /// Cornell box with smoke
+    CornellSmoke,
 }
 
 /// build and render a scene based on the scene option
@@ -37,6 +41,7 @@ pub fn run_scene(option: Scene) -> Result<()> {
         Scene::Quads => quads(),
         Scene::Light => simple_light(),
         Scene::CornellBox => cornell_box(),
+        Scene::CornellSmoke => cornell_smoke(),
     }
 }
 
@@ -367,6 +372,94 @@ fn cornell_box() -> Result<()> {
     let box2 = Arc::new(RotationY::new(box2, -18.));
     let box2 = Box::new(Translate::new(box2, Vec3::new(130., 0., 65.)));
     world.add(box2);
+
+    let camera_config = camera::Config::new()
+        .image(1.0, 600)
+        .quality(200, 50)
+        .view(
+            40.,
+            Point3::new(278., 278., -800.),
+            Point3::new(278., 278., 0.),
+            Vec3::new(0., 1., 0.),
+        )
+        .bgcolor(Color::zero());
+
+    let camera = Camera::new(camera_config);
+
+    camera.render(&world)
+}
+
+fn cornell_smoke() -> Result<()> {
+    let mut world = HittableList::new();
+
+    let red = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::from_color(Color::new(7., 7., 7.)));
+
+    world.add(Box::new(Quad::new(
+        Point3::new(555., 0., 0.),
+        Vec3::new(0., 555., 0.),
+        Vec3::new(0., 0., 555.),
+        green,
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(0., 0., 0.),
+        Vec3::new(0., 555., 0.),
+        Vec3::new(0., 0., 555.),
+        red,
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(113., 554., 127.),
+        Vec3::new(330., 0., 0.),
+        Vec3::new(0., 0., 305.),
+        light,
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(0., 555., 0.),
+        Vec3::new(555., 0., 0.),
+        Vec3::new(0., 0., 555.),
+        white.clone(),
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(0., 0., 0.),
+        Vec3::new(555., 0., 0.),
+        Vec3::new(0., 0., 555.),
+        white.clone(),
+    )));
+    world.add(Box::new(Quad::new(
+        Point3::new(0., 0., 555.),
+        Vec3::new(555., 0., 0.),
+        Vec3::new(0., 555., 0.),
+        white.clone(),
+    )));
+
+    let box1 = Arc::new(Block::new(
+        Point3::new(0., 0., 0.),
+        Point3::new(165., 330., 165.),
+        white.clone(),
+    ));
+    let box1 = Arc::new(RotationY::new(box1, 15.));
+    let box1 = Arc::new(Translate::new(box1, Vec3::new(265., 0., 295.)));
+
+    let box2 = Arc::new(Block::new(
+        Point3::new(0., 0., 0.),
+        Point3::new(165., 165., 165.),
+        white,
+    ));
+    let box2 = Arc::new(RotationY::new(box2, -18.));
+    let box2 = Arc::new(Translate::new(box2, Vec3::new(130., 0., 65.)));
+
+    world.add(Box::new(ConstantMedium::from_color(
+        box1,
+        0.01,
+        Color::new(0., 0., 0.),
+    )));
+    world.add(Box::new(ConstantMedium::from_color(
+        box2,
+        0.01,
+        Color::new(1., 1., 1.),
+    )));
 
     let camera_config = camera::Config::new()
         .image(1.0, 600)
