@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     hittable::{HitRecord, Hittable},
     optical::material::Material,
@@ -12,7 +10,7 @@ pub struct Quad {
     u: Vec3,   // side vector
     v: Vec3,   // side vector
     w: Vec3,   // normal oriented with length: 1 / area
-    mat: Arc<dyn Material>,
+    mat: Material,
     bbox: Aabb,
 
     normal: Vec3,
@@ -21,7 +19,7 @@ pub struct Quad {
 
 impl Quad {
     /// Creates a 2D quadrilateral, defined by its starting point and two side vectors
-    pub fn new(q: Point3, u: Vec3, v: Vec3, mat: Arc<dyn Material>) -> Quad {
+    pub fn new(q: Point3, u: Vec3, v: Vec3, mat: Material) -> Quad {
         let n = Vec3::cross(&u, &v);
         let normal = Vec3::unit_vector(&n);
 
@@ -64,7 +62,7 @@ impl Quad {
 }
 
 impl Hittable for Quad {
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+    fn hit<'a>(&'a self, r: &Ray, ray_t: Interval, rec: &mut HitRecord<'a>) -> bool {
         let denom = Vec3::dot(&self.normal, &r.direction());
 
         // No hit if the ray is parallel to the plane.
@@ -92,7 +90,7 @@ impl Hittable for Quad {
 
         rec.t = t;
         rec.p = intersection;
-        rec.mat = Some(self.mat.clone());
+        rec.mat = Some(&self.mat);
         rec.set_face_normal(r, self.normal);
 
         true

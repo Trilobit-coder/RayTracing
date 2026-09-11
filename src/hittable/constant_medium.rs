@@ -2,10 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     hittable::{HitRecord, Hittable},
-    optical::{
-        Texture,
-        material::{Isotropic, Material},
-    },
+    optical::{material::Material, texture::Texture},
     utilities::{Color, Interval, Ray, Vec3, random::random_f32},
 };
 
@@ -13,16 +10,16 @@ use crate::{
 pub struct ConstantMedium {
     boundary: Arc<dyn Hittable>,
     neg_inv_density: f32,
-    phase_function: Arc<dyn Material>,
+    phase_function: Material,
 }
 
 impl ConstantMedium {
     /// Creates a medium of constant `density` filling `boundary`, scattering with `tex`.
-    pub fn new(boundary: Arc<dyn Hittable>, density: f32, tex: Arc<dyn Texture>) -> ConstantMedium {
+    pub fn new(boundary: Arc<dyn Hittable>, density: f32, tex: Texture) -> ConstantMedium {
         ConstantMedium {
             boundary,
             neg_inv_density: -1.0 / density,
-            phase_function: Arc::new(Isotropic::new(tex)),
+            phase_function: Material::isotropic(tex),
         }
     }
 
@@ -31,7 +28,7 @@ impl ConstantMedium {
         ConstantMedium {
             boundary,
             neg_inv_density: -1.0 / density,
-            phase_function: Arc::new(Isotropic::from_color(albedo)),
+            phase_function: Material::isotropic(albedo),
         }
     }
 }
@@ -41,7 +38,11 @@ impl Hittable for ConstantMedium {
         self.boundary.bounding_box()
     }
 
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+    fn has_motion(&self) -> bool {
+        self.boundary.has_motion()
+    }
+
+    fn hit<'a>(&'a self, r: &Ray, ray_t: Interval, rec: &mut HitRecord<'a>) -> bool {
         let mut rec1 = HitRecord::empty();
         let mut rec2 = HitRecord::empty();
 
@@ -84,7 +85,7 @@ impl Hittable for ConstantMedium {
 
         rec.normal = Vec3::new(1., 0., 0.); // arbitrary
         rec.front_face = true; // also arbitrary
-        rec.mat = Some(self.phase_function.clone());
+        rec.mat = Some(&self.phase_function);
 
         true
     }

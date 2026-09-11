@@ -1,0 +1,3 @@
+# Compile for the host CPU so SIMD (SSE/AVX) applies to the renderer's vector math.
+[build]
+rustflags = ["-C", "target-cpu=native"]

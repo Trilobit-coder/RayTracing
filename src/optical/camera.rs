@@ -222,13 +222,16 @@ impl Camera {
 
         writeln!(out, "P3\n{} {}\n255", self.image_width, self.image_height)?;
 
+        // Rays only need a random time when the scene contains moving objects.
+        let use_motion = world.has_motion();
+
         let pixels: Vec<Color> = (0..self.image_height)
             .into_par_iter()
             .flat_map_iter(|j| (0..self.image_width).map(move |i| (i, j)))
             .map(|(i, j)| {
                 let mut pixel_color = Color::zero();
                 for _ in 0..self.samples_per_pixel {
-                    let r: Ray = self.get_ray(i, j);
+                    let r: Ray = self.get_ray(i, j, use_motion);
                     pixel_color += ray_color(&r, self.max_depth, world, &self.background);
                 }
                 pixel_color * self.pixel_samples_scale
@@ -243,7 +246,7 @@ impl Camera {
         Ok(())
     }
 
-    fn get_ray(&self, i: u32, j: u32) -> Ray {
+    fn get_ray(&self, i: u32, j: u32, use_motion: bool) -> Ray {
         // Construct a camera ray originating from the defocus disk and directed at a randomly
         // sampled point around the pixel location i, j.
         // with a random spacetime to simulate motion blur
@@ -259,7 +262,7 @@ impl Camera {
             self.defocus_disk_sample()
         };
         let ray_direction = pixel_sample - ray_origin;
-        let ray_time = random_f32();
+        let ray_time = if use_motion { random_f32() } else { 0.0 };
 
         Ray::new(ray_origin, ray_direction).set_time(ray_time)
     }

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     hittable::{HitRecord, Hittable, HittableList, Quad},
     optical::material::Material,
@@ -13,7 +11,7 @@ pub struct Block {
 
 impl Block {
     /// Returns the 3D block (six sides) that contains the two opposite vertices a & b.
-    pub fn new(a: Point3, b: Point3, mat: Arc<dyn Material>) -> Block {
+    pub fn new(a: Point3, b: Point3, mat: Material) -> Block {
         let mut sides = HittableList::new();
 
         // Construct the two opposite vertices with the minimum and maximum coordinates.
@@ -74,11 +72,15 @@ impl Block {
 }
 
 impl Hittable for Block {
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+    fn hit<'a>(&'a self, r: &Ray, ray_t: Interval, rec: &mut HitRecord<'a>) -> bool {
         self.sides.hit(r, ray_t, rec)
     }
 
     fn bounding_box(&self) -> Aabb {
         self.sides.bounding_box()
+    }
+
+    fn has_motion(&self) -> bool {
+        self.sides.has_motion()
     }
 }

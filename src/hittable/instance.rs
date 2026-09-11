@@ -31,7 +31,11 @@ impl Hittable for Translate {
         self.bbox
     }
 
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+    fn has_motion(&self) -> bool {
+        self.object.has_motion()
+    }
+
+    fn hit<'a>(&'a self, r: &Ray, ray_t: Interval, rec: &mut HitRecord<'a>) -> bool {
         // Move the ray backwards by the offset
         let offset_r = Ray::new(r.origin() - self.offset, r.direction()).set_time(r.time());
 
@@ -48,16 +52,16 @@ impl Hittable for Translate {
 }
 
 /// A rotated instance of a hittable primitive about Y axis.
-pub struct RotationY {
+pub struct RotateY {
     object: Arc<dyn Hittable>,
     sin_theta: f32,
     cos_theta: f32,
     bbox: Aabb,
 }
 
-impl RotationY {
+impl RotateY {
     /// create a rotated object about Y by an angle in degrees
-    pub fn new(object: Arc<dyn Hittable>, angle: f32) -> RotationY {
+    pub fn new(object: Arc<dyn Hittable>, angle: f32) -> RotateY {
         let radians = f32::to_radians(angle);
         let sin_theta = f32::sin(radians);
         let cos_theta = f32::cos(radians);
@@ -92,7 +96,7 @@ impl RotationY {
 
         let bbox = Aabb::extrema(&min, &max);
 
-        RotationY {
+        RotateY {
             object,
             bbox,
             sin_theta,
@@ -101,12 +105,16 @@ impl RotationY {
     }
 }
 
-impl Hittable for RotationY {
+impl Hittable for RotateY {
     fn bounding_box(&self) -> Aabb {
         self.bbox
     }
 
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+    fn has_motion(&self) -> bool {
+        self.object.has_motion()
+    }
+
+    fn hit<'a>(&'a self, r: &Ray, ray_t: Interval, rec: &mut HitRecord<'a>) -> bool {
         // Transform the ray from world space to object space.
 
         let origin = Point3::new(

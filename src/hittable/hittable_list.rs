@@ -42,7 +42,7 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool {
+    fn hit<'a>(&'a self, r: &Ray, ray_t: Interval, rec: &mut HitRecord<'a>) -> bool {
         let mut hit_anything = false;
         let mut closest_so_far = ray_t.max;
 
@@ -58,5 +58,9 @@ impl Hittable for HittableList {
 
     fn bounding_box(&self) -> Aabb {
         self.bbox
+    }
+
+    fn has_motion(&self) -> bool {
+        self.objects.iter().any(|object| object.has_motion())
     }
 }

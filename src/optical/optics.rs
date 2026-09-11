@@ -17,19 +17,18 @@ pub fn ray_color<T: Hittable>(r: &Ray, depth: u32, world: &T, background: &Color
         return *background;
     }
 
-    match rec.mat.as_ref() {
-        Some(mat) => {
-            let color_from_emission = mat.emitted(rec.u, rec.v, &rec.p);
-            match mat.scatter(r, &rec) {
-                Some((attenuation, scattered)) => {
-                    let color_from_scatter =
-                        attenuation * ray_color(&scattered, depth - 1, world, background);
-                    color_from_emission + color_from_scatter
-                }
-                None => color_from_emission,
-            }
+    let Some(mat) = rec.mat else {
+        return Color::zero();
+    };
+
+    let color_from_emission = mat.emitted(rec.u, rec.v, &rec.p);
+    match mat.scatter(r, &rec) {
+        Some((attenuation, scattered)) => {
+            let color_from_scatter =
+                attenuation * ray_color(&scattered, depth - 1, world, background);
+            color_from_emission + color_from_scatter
         }
-        None => Color::zero(),
+        None => color_from_emission,
     }
 }
 

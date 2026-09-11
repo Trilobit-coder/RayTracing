@@ -82,7 +82,7 @@ impl Aabb {
         let ray_dir = r.direction();
         let mut ray_t = *ray_t;
 
-        for axis in 0..2 {
+        for axis in 0..3 {
             let ax = self.axis_interval(axis);
             let adinv = 1.0 / ray_dir[axis];
 
@@ -124,6 +124,15 @@ impl Aabb {
     /// Compare AABBs along Z axis.
     pub fn z_compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>) -> Ordering {
         Self::compare(a, b, 2)
+    }
+
+    /// The center point of the bounding box.
+    pub fn centroid(&self) -> Point3 {
+        Point3::new(
+            0.5 * (self.x.min + self.x.max),
+            0.5 * (self.y.min + self.y.max),
+            0.5 * (self.z.min + self.z.max),
+        )
     }
 
     /// Returns the index of the longest axis of the bounding box.

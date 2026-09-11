@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::optical::material::Material;
 use crate::utilities::Aabb;
 use crate::utilities::Interval;
@@ -7,14 +5,17 @@ use crate::utilities::Ray;
 use crate::utilities::{Point3, Vec3};
 
 /// A record of the closest hit of a ray with a scene object.
+///
+/// The material is borrowed from the hit object rather than cloned, so a hit
+/// costs no allocation or reference counting.
 #[derive(Clone)]
-pub struct HitRecord {
+pub struct HitRecord<'a> {
     /// Point where the ray hit the surface.
     pub p: Point3,
     /// Outward surface normal at the hit point, oriented against the ray.
     pub normal: Vec3,
     /// Material of the hit object.
-    pub mat: Option<Arc<dyn Material>>,
+    pub mat: Option<&'a Material>,
     /// Ray parameter `t` at the hit point.
     pub t: f32,
     /// Whether the ray hit the front face of the surface.
@@ -28,12 +29,17 @@ pub struct HitRecord {
 /// An object a ray can hit.
 pub trait Hittable: Send + Sync {
     /// Tests the ray against the object; on a hit within `ray_t`, fills `rec` and returns `true`.
-    fn hit(&self, r: &Ray, ray_t: Interval, rec: &mut HitRecord) -> bool;
+    fn hit<'a>(&'a self, r: &Ray, ray_t: Interval, rec: &mut HitRecord<'a>) -> bool;
     /// Return the bounding AABB of a hittable object.
     fn bounding_box(&self) -> Aabb;
+    /// Whether any part of the object moves over the shutter interval.
+    /// Lets the camera skip drawing a random ray time for static scenes.
+    fn has_motion(&self) -> bool {
+        false
+    }
 }
 
-impl HitRecord {
+impl HitRecord<'_> {
     /// Sets the hit record normal, flipping it so it always opposes the ray direction.
     ///
     /// NOTE: the parameter `outward_normal` is assumed to have unit length.
@@ -47,7 +53,7 @@ impl HitRecord {
     }
 
     /// Return an empty `HitRecord`
-    pub fn empty() -> HitRecord {
+    pub fn empty() -> HitRecord<'static> {
         HitRecord {
             p: Point3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
@@ -79,7 +85,7 @@ pub use block::Block;
 pub use bvh::BvhNode;
 pub use constant_medium::ConstantMedium;
 pub use hittable_list::HittableList;
-pub use instance::RotationY;
+pub use instance::RotateY;
 pub use instance::Translate;
 pub use quad::Quad;
 pub use sphere::Sphere;

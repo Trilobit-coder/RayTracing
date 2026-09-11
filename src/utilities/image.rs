@@ -4,13 +4,13 @@ use image::DynamicImage;
 
 use crate::utilities::Color;
 
-/// A decoded 8-bit RGB image, sampled with continuous `(u, v)` coordinates.
+/// A decoded RGB image, sampled with continuous `(u, v)` coordinates.
 pub struct Image {
     width: u32,
     height: u32,
-    /// Bottom-up RGB pixel data, `3 * width * height` bytes;
+    /// Bottom-up linear-light RGB pixel data, `3 * width * height` f32s;
     /// `None` if the image could not be loaded.
-    bdata: Option<Vec<u8>>,
+    bdata: Option<Vec<f32>>,
 }
 
 impl Image {
@@ -63,13 +63,19 @@ impl Image {
     fn from_dynamic(img: DynamicImage) -> Image {
         let img = img.to_rgb8();
         let (width, height) = img.dimensions();
-        let mut bdata = vec![0u8; 3 * width as usize * height as usize];
+        let mut bdata = vec![0.0; 3 * width as usize * height as usize];
 
         // Decoded rows run top-down, but the texture convention wants v = 0 at
-        // the bottom of the image, so flip vertically while copying.
+        // the bottom of the image, so flip vertically while copying. Stored
+        // pixels are gamma-encoded (sRGB), but the renderer works in linear
+        // light; undo the encoding once here with the same gamma 2
+        // approximation that `write_color` applies on output, so the texture
+        // round-trips to its original appearance.
         for (x, y, px) in img.enumerate_pixels() {
             let dst = 3 * ((height - 1 - y) * width + x) as usize;
-            bdata[dst..dst + 3].copy_from_slice(&px.0);
+            bdata[dst] = (px.0[0] as f32 / 255.0).powi(2);
+            bdata[dst + 1] = (px.0[1] as f32 / 255.0).powi(2);
+            bdata[dst + 2] = (px.0[2] as f32 / 255.0).powi(2);
         }
 
         Image {
@@ -102,16 +108,7 @@ impl Image {
         let i = i.clamp(0, self.width as usize - 1);
         let j = j.clamp(0, self.height as usize - 1);
 
-        let pixel_scale = 1.0 / 255.0;
         let idx = 3 * (i + self.width as usize * j);
-        let r = pixel_scale * bdata[idx] as f32;
-        let g = pixel_scale * bdata[idx + 1] as f32;
-        let b = pixel_scale * bdata[idx + 2] as f32;
-
-        // Stored pixels are gamma-encoded (sRGB), but the renderer works in
-        // linear light. Undo the encoding with the same gamma 2 approximation
-        // that `write_color` applies on output, so the texture round-trips to
-        // its original appearance.
-        Color::new(r * r, g * g, b * b)
+        Color::new(bdata[idx], bdata[idx + 1], bdata[idx + 2])
     }
 }
